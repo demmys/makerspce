@@ -12,15 +12,22 @@ namespace makerspec{
         this->config = config;
     }
 
+    UnitVector3D &UnitVector3D::operator-(){
+        x = -x;
+        y = -y;
+        z = -z;
+        return *this;
+    }
+
     UnitVector3D &UnitVector3D::operator=(const Vector3D &v){
         Vector3D::operator=(v);
         return *this;
     }
 
     bool UnitVector3D::operator==(const UnitVector3D &v){
-        float dx = std::abs(this->x - v.x);
-        float dy = std::abs(this->y - v.y);
-        float dz = std::abs(this->z - v.z);
+        float dx = std::abs(x - v.x);
+        float dy = std::abs(y - v.y);
+        float dz = std::abs(z - v.z);
         if(dx == 0 && dy == 0 && dz == 0){
             return true;
         }

@@ -4,63 +4,59 @@ namespace makerspec{
 
     IPhoneCaseModel::IPhoneCaseModel(Configuration *config, const std::string &filename) : Model(config, filename){}
 
-    std::vector<unsigned int> &IPhoneCaseModel::getYTopInnerFace(){
-        static std::vector<unsigned int> indices;
+    IPhoneCaseModel::Size &IPhoneCaseModel::getSize(){
+        static IPhoneCaseModel::Size size;
 
-        if(indices.size() > 0){
-            return indices;
+        if(size.width){
+            return size;
         }
 
-        // get all Y minus direction faces
-        std::vector<unsigned int> *minusYFaces = getFacesByNormal(0.0, -1.0, 0.0);
-        // set interim Y top face to first one
-        std::vector<unsigned int>::iterator i = minusYFaces->begin();
-        unsigned int verticeIndex = mesh.faces[*i].verticeIndices[0];
-        float maximum = mesh.vertices[verticeIndex].y;
-        indices.push_back(*i);
-        // search top face
-        for(i++; i != minusYFaces->end(); i++){
-            verticeIndex = mesh.faces[*i].verticeIndices[0];
-            float current = mesh.vertices[verticeIndex].y;
-            float delta = maximum - current;
-            // change maximum
-            if(delta < 0){
-                maximum = current;
-                // clear if the new one is not on the same face
-                if(std::abs(delta) > config->getToleranceOfCoord()){
-                    indices.clear();
-                }
-                indices.push_back(*i);
-            } else if(std::abs(delta) < config->getToleranceOfCoord()){
-                indices.push_back(*i);
-            }
+        float xTop, xBottom, yTop, yBottom;
+        std::vector<unsigned int> xTopFaces, xBottomFaces, yTopFaces, yBottomFaces;
+        UnitVector3D xNormal(config, -1.0, 0.0, 0.0), yNormal(config, 0.0, -1.0, 0.0);
+
+        getXYInwallFaces(xTopFaces, xNormal);
+        getXYInwallFaces(xBottomFaces, -xNormal);
+        getXYInwallFaces(yTopFaces, yNormal);
+        getXYInwallFaces(yBottomFaces, -yNormal);
+
+        xTop = mesh.vertices[mesh.faces[xTopFaces[0]].verticeIndices[0]].x;
+        xBottom = mesh.vertices[mesh.faces[xBottomFaces[0]].verticeIndices[0]].x;
+        yTop = mesh.vertices[mesh.faces[yTopFaces[0]].verticeIndices[0]].y;
+        yBottom = mesh.vertices[mesh.faces[yBottomFaces[0]].verticeIndices[0]].y;
+
+        if(xTop > yTop){
+            size.width = xTop - xBottom;
+            size.height = yTop - yBottom;
+        } else{
+            size.width = yTop - yBottom;
+            size.height = xTop - xBottom;
         }
-        delete minusYFaces;
-        return indices;
+
+        return size;
     }
 
-    std::vector<unsigned int> &IPhoneCaseModel::getYBottomInnerFace(){
-        static std::vector<unsigned int> indices;
-
-        if(indices.size() > 0){
-            return indices;
+    void IPhoneCaseModel::getXYInwallFaces(std::vector<unsigned int> &indices, UnitVector3D &normal){
+        int searchMax = 1, xInwall = std::abs(normal.y);
+        if(normal.x > 0 || normal.y > 0){
+            searchMax = -1;
         }
-
-        // get all Y plus direction faces
-        std::vector<unsigned int> *plusYFaces = getFacesByNormal(0.0, 1.0, 0.0);
-        // set interim Y bottom face to first one
-        std::vector<unsigned int>::iterator i = plusYFaces->begin();
+        // get candidates
+        std::vector<unsigned int> candidates;
+        getFacesByNormal(candidates, normal);
+        // set first one to interim target
+        std::vector<unsigned int>::iterator i = candidates.begin();
         unsigned int verticeIndex = mesh.faces[*i].verticeIndices[0];
-        float minimum = mesh.vertices[verticeIndex].y;
+        float interimCoord = mesh.vertices[verticeIndex][xInwall];
         indices.push_back(*i);
-        // search top face
-        for(i++; i != plusYFaces->end(); i++){
+        // search correct coord
+        for(i++; i != candidates.end(); i++){
             verticeIndex = mesh.faces[*i].verticeIndices[0];
-            float current = mesh.vertices[verticeIndex].y;
-            float delta = current - minimum;
-            // change minimum
+            float current = mesh.vertices[verticeIndex][xInwall];
+            float delta = searchMax * (interimCoord - current);
+            // change interim coord
             if(delta < 0){
-                minimum = current;
+                interimCoord = current;
                 // clear if the new one is not on the same face
                 if(std::abs(delta) > config->getToleranceOfCoord()){
                     indices.clear();
@@ -70,8 +66,6 @@ namespace makerspec{
                 indices.push_back(*i);
             }
         }
-        delete plusYFaces;
-        return indices;
     }
 
 }

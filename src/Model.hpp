@@ -13,8 +13,8 @@ namespace makerspec{
             Model(Configuration *config, const std::string &filename);
             ~Model();
             Mesh mesh;
-            std::vector<unsigned int> *getFacesByNormal(const UnitVector3D &normal);
-            std::vector<unsigned int> *getFacesByNormal(float x, float y, float z);
+            void getFacesByNormal(std::vector<unsigned int> &indices, const UnitVector3D &normal);
+            void getFacesByNormal(std::vector<unsigned int> &indices, float x, float y, float z);
         protected:
             Configuration *config;
         private:

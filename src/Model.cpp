@@ -21,19 +21,17 @@ namespace makerspec{
         delete[] mesh.vertices;
     }
 
-    std::vector<unsigned int> *Model::getFacesByNormal(const UnitVector3D &normal){
-        std::vector<unsigned int> *indices = new std::vector<unsigned int>;
+    void Model::getFacesByNormal(std::vector<unsigned int> &indices, const UnitVector3D &normal){
         for(unsigned int i = 0; i < mesh.numFaces; i++){
             if(mesh.faces[i].normal == normal){
-                indices->push_back(i);
+                indices.push_back(i);
             }
         }
-        return indices;
     }
 
-    std::vector<unsigned int> *Model::getFacesByNormal(float x, float y, float z){
+    void Model::getFacesByNormal(std::vector<unsigned int> &indices, float x, float y, float z){
         UnitVector3D normal(config, x, y, z);
-        return getFacesByNormal(normal);
+        return getFacesByNormal(indices, normal);
     }
 
     void Model::init(const aiMesh &mesh){

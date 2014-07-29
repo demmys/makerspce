@@ -7,11 +7,14 @@ namespace makerspec{
 
     class IPhoneCaseModel : public Model{
         public:
+            struct Size{
+                float width;
+                float height;
+            };
             IPhoneCaseModel(Configuration *config, const std::string &filename);
-            std::vector<unsigned int> &getYTopInnerFace();
-            std::vector<unsigned int> &getYBottomInnerFace();
-            std::vector<unsigned int> &getXTopInnerFace();
-            std::vector<unsigned int> &getXBottomInnerFace();
+            IPhoneCaseModel::Size &getSize();
+        private:
+            void getXYInwallFaces(std::vector<unsigned int> &indices, UnitVector3D &normal);
     };
 }
 

@@ -14,6 +14,7 @@ namespace makerspec{
             UnitVector3D(Configuration *config);
             UnitVector3D(Configuration *config, float x, float y, float z);
             UnitVector3D &operator=(const Vector3D &v);
+            UnitVector3D &operator-();
             bool operator==(const UnitVector3D &v);
             bool operator!=(const UnitVector3D &v);
         private:

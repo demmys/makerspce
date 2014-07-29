@@ -45,33 +45,8 @@ int main(int argc, char *argv[]){
             cout << endl;
         }
 
-        vector<unsigned int> yTopInnerFaceIndices = model.getYTopInnerFace();
-        cout << "Y Top Inner Faces: " << yTopInnerFaceIndices.size() << endl;
-        for(vector<unsigned int>::iterator i = yTopInnerFaceIndices.begin(); i != yTopInnerFaceIndices.end(); i++){
-            cout << "Faces[" << *i << "]: " << endl;
-            Face &face = model.mesh.faces[*i];
-            for(j = 0; j < 3; j++){
-                Vertice &vertice = model.mesh.vertices[face.verticeIndices[j]];
-                cout << "\tindex[" << j << "] = Vertices[" << face.verticeIndices[j] << "]: "
-                    << vertice.x << ", "
-                    << vertice.y << ", "
-                    << vertice.z << endl;
-            }
-        }
-
-        vector<unsigned int> yBottomInnerFaceIndices = model.getYBottomInnerFace();
-        cout << "Y Bottom Inner Faces: " << yBottomInnerFaceIndices.size() << endl;
-        for(vector<unsigned int>::iterator i = yBottomInnerFaceIndices.begin(); i != yBottomInnerFaceIndices.end(); i++){
-            cout << "Faces[" << *i << "]: " << endl;
-            Face &face = model.mesh.faces[*i];
-            for(j = 0; j < 3; j++){
-                Vertice &vertice = model.mesh.vertices[face.verticeIndices[j]];
-                cout << "\tindex[" << j << "] = Vertices[" << face.verticeIndices[j] << "]: "
-                    << vertice.x << ", "
-                    << vertice.y << ", "
-                    << vertice.z << endl;
-            }
-        }
+        IPhoneCaseModel::Size size = model.getSize();
+        cout << "Case Size: (" << size.width << ", " << size.height << ")" << endl;
 
         //cerr << "load file " << argv[1] << " failed." << endl;
     } else{
