@@ -12,38 +12,9 @@ int main(int argc, char *argv[]){
 
         IPhoneCaseModel model(&config, string(argv[1]));
 
-        unsigned int i, j;
-
         cout << "model loaded." << endl
-             << "\tmNumFaces: " << model.mesh.numFaces
-             << ", mNumVertices: " << model.mesh.numVertices
-             << endl;
-
-        for(i = 0; i < model.mesh.numFaces; i++){
-            cout << "\tFaces[" << i << "]" << endl
-                 << "\t\tnormal: "
-                 << model.mesh.faces[i].normal.x << ", "
-                 << model.mesh.faces[i].normal.y << ", "
-                 << model.mesh.faces[i].normal.z << endl;
-            cout << "\t\tindices: "
-                 << model.mesh.faces[i].verticeIndices[0] << ", "
-                 << model.mesh.faces[i].verticeIndices[1] << ", "
-                 << model.mesh.faces[i].verticeIndices[2] << endl;
-        }
-
-        for(i = 0; i < model.mesh.numVertices; i++){
-            cout << "\tVertices[" << i << "]" << endl
-                 << "\t\tcoord: "
-                 << model.mesh.vertices[i].x << ", "
-                 << model.mesh.vertices[i].y << ", "
-                 << model.mesh.vertices[i].z << endl
-                 << "\t\tindices: ";
-            vector<unsigned int>::iterator k = model.mesh.vertices[i].faceIndices.begin();
-            while(k != model.mesh.vertices[i].faceIndices.end()){
-                cout << *(k++) << ", ";
-            }
-            cout << endl;
-        }
+             << "Faces: " << model.mesh.numFaces << endl
+             << "Vertices: " << model.mesh.numVertices << endl;
 
         IPhoneCaseModel::Size size = model.getSize();
         cout << "Case Size: (" << size.width << ", " << size.height << ")" << endl;
