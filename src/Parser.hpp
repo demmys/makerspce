@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <fstream>
+#include <iostream>
 #include "Configuration.hpp"
 
 namespace makerspec{

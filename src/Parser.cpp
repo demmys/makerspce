@@ -4,8 +4,10 @@
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
+#include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_stl.hpp>
+#include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/variant/recursive_variant.hpp>
 
 using namespace boost::spirit;
@@ -67,12 +69,72 @@ namespace makerspec{
         return d;
     };
 
+    // condition
+    struct Condition{
+        enum Operator{ biggerThan, lessThan };
+        std::vector<std::string> left;
+        Condition::Operator op;
+        std::vector<float> right;
+    };
+
+    // operators
+    struct operators_ : qi::symbols<char, Condition::Operator>{
+        operators_(){
+            add
+                (">", Condition::biggerThan)
+                ("<", Condition::lessThan)
+            ;
+        };
+    } operators;
+
+    // spec
+    struct Spec{
+        std::string sentence;
+        Condition condition;
+    };
+
+    // describe
+    struct Describe{
+        std::string sentence;
+        std::vector<Spec> specs;
+    };
+
+    // makerspec
+    struct Makerspec{
+        std::vector<Directive> directives;
+        std::vector<Describe> describes;
+    };
+}
+
+BOOST_FUSION_ADAPT_STRUCT(
+    makerspec::Condition,
+    (std::vector<std::string>, left)
+    (makerspec::Condition::Operator, op)
+    (std::vector<float>, right)
+)
+BOOST_FUSION_ADAPT_STRUCT(
+    makerspec::Spec,
+    (std::string, sentence)
+    (makerspec::Condition, condition)
+)
+BOOST_FUSION_ADAPT_STRUCT(
+    makerspec::Describe,
+    (std::string, sentence)
+    (std::vector<makerspec::Spec>, specs)
+)
+BOOST_FUSION_ADAPT_STRUCT(
+    makerspec::Makerspec,
+    (std::vector<makerspec::Directive>, directives)
+    (std::vector<makerspec::Describe>, describes)
+)
+
+namespace makerspec{
     /*
      * makerspec_grammar
      */
     template<typename Iterator>
-    struct makerspec_grammar : qi::grammar<Iterator, std::vector<Directive>(), ascii::space_type>{
-        makerspec_grammar() : makerspec_grammar::base_type(makerspec){
+    struct makerspec_grammar : qi::grammar<Iterator, Makerspec(), ascii::space_type>{
+        makerspec_grammar() : makerspec_grammar::base_type(makerspec, "makerspec"){
             using namespace boost::phoenix;
             using namespace qi::labels;
             using qi::_val;
@@ -82,8 +144,26 @@ namespace makerspec{
             using ascii::char_;
             using ascii::string;
 
-            makerspec %= *directive;
+            makerspec %= *directive >> *describe;
 
+            /*
+             * Describe
+             */
+            describe %= lit("describe") >> '(' >> text >> ')' >> '{' >> *spec >> '}';
+
+            spec %= lit("it") >> '(' >> text >> ')' >> '{' >> condition >> '}';
+
+            condition %= reference >> operators >> floatlist;
+
+            reference %= literal >> *('.' >> literal);
+
+            literal %= +(char_ - '.');
+
+            floatlist %= '(' >> float_ >> ',' >> float_ >> ')';
+
+            /*
+             * Directive
+             */
             directive = (lit("#subject") >> text)
                             [_val = bind(static_cast<Directive (*)(Directive::DirectiveType, std::string)>(createDirective), Directive::subject, _1)]
                       | (lit("#scale") >> scales)
@@ -91,19 +171,55 @@ namespace makerspec{
                       | (lit("#tolerance") >> *tolerance)
                             [_val = bind(static_cast<Directive (*)(Directive::DirectiveType, std::vector<Tolerance>)>(createDirective), Directive::tolerances, _1)];
 
-            text %= lexeme['"' >> +(char_ - '"') >> '"'];
-
             tolerance = lexeme[float_ >> lit("deg")]
                             [_val = bind(createTolerance, Tolerance::deg, _1)]
                       | lexeme[float_ >> lit("mm")]
                             [_val = bind(createTolerance, Tolerance::mm, _1)]
                       | lexeme[float_ >> lit("inch")]
                             [_val = bind(createTolerance, Tolerance::inch, _1)];
+
+            /*
+             * General
+             */
+            text %= lexeme['"' >> +(char_ - '"') >> '"'];
+
+            /*
+             * Error handring
+             */
+            makerspec.name("makerspec");
+            describe.name("describe block");
+            spec.name("it block");
+            condition.name("condition");
+            reference.name("reference");
+            literal.name("character literal");
+            floatlist.name("list of float");
+            directive.name("directive");
+            tolerance.name("tolerance value");
+            text.name("string text");
+
+            qi::on_error<qi::fail>(
+                makerspec,
+                std::cerr << val("Error: Expecting")
+                          << _4
+                          << val(" here: \"")
+                          << construct<std::string>(_3, _2)
+                          << val("\"")
+                          << std::endl
+            );
         }
-        qi::rule<Iterator, std::vector<Directive>(), ascii::space_type> makerspec;
+        qi::rule<Iterator, Makerspec(), ascii::space_type> makerspec;
+        // describe
+        qi::rule<Iterator, Describe(), ascii::space_type> describe;
+        qi::rule<Iterator, Spec(), ascii::space_type> spec;
+        qi::rule<Iterator, Condition(), ascii::space_type> condition;
+        qi::rule<Iterator, std::vector<std::string>(), ascii::space_type> reference;
+        qi::rule<Iterator, std::string(), ascii::space_type> literal;
+        qi::rule<Iterator, std::vector<float>(), ascii::space_type> floatlist;
+        // directive
         qi::rule<Iterator, Directive(), ascii::space_type> directive;
-        qi::rule<Iterator, std::string(), ascii::space_type> text;
         qi::rule<Iterator, Tolerance(), ascii::space_type> tolerance;
+        // general
+        qi::rule<Iterator, std::string(), ascii::space_type> text;
     };
 
 
@@ -117,8 +233,9 @@ namespace makerspec{
         std::string::const_iterator end = storage.end();
 
         makerspec_grammar<std::string::const_iterator> grammar;
-        std::vector<Directive> directives;
-        bool result = phrase_parse(iterator, end, grammar, ascii::space, directives);
+        Makerspec parsed;
+        bool result = phrase_parse(iterator, end, grammar, ascii::space, parsed);
+        std::vector<Directive> directives = parsed.directives;
 
         if(result && iterator == end){
             Configuration::ScaleUnit unit = Configuration::mm;
@@ -160,6 +277,7 @@ namespace makerspec{
             testfile = filename;
             return true;
         } else{
+            std::cout << "fail: " << parsed.describes.size() << std::endl;
             return false;
         }
     }
