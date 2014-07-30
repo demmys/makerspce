@@ -7,6 +7,7 @@ namespace makerspec{
         public:
             enum ScaleUnit{ mm, inch };
             static Configuration defaultConfiguration;
+            Configuration(){};
             Configuration(Configuration::ScaleUnit unit, float toleranceOfDegree, float toleranceOfCoord);
             // getter
             Configuration::ScaleUnit getUnit();
