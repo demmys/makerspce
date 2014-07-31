@@ -1,4 +1,4 @@
-#subject "sample/case_rounded.stl"
+#subject "sample/iphone5_case.stl"
 #scale mm
 #tolerance 1deg 0.1mm
 
