@@ -69,14 +69,6 @@ namespace makerspec{
         return d;
     };
 
-    // condition
-    struct Condition{
-        enum Operator{ biggerThan, lessThan };
-        std::vector<std::string> left;
-        Condition::Operator op;
-        std::vector<float> right;
-    };
-
     // operators
     struct operators_ : qi::symbols<char, Condition::Operator>{
         operators_(){
@@ -104,6 +96,7 @@ namespace makerspec{
         std::vector<Directive> directives;
         std::vector<Describe> describes;
     };
+
 }
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -149,15 +142,15 @@ namespace makerspec{
             /*
              * Describe
              */
-            describe %= lit("describe") >> '(' >> text >> ')' >> '{' >> *spec >> '}';
+            describe %= lit("describe") > '(' > text > ')' > '{' > *spec > '}';
 
-            spec %= lit("it") >> '(' >> text >> ')' >> '{' >> condition >> '}';
+            spec %= lit("it") > '(' > text > ')' > '{' > condition > '}';
 
             condition %= reference >> operators >> floatlist;
 
             reference %= literal >> *('.' >> literal);
 
-            literal %= +(char_ - '.');
+            literal %= +char_("a-zA-Z");
 
             floatlist %= '(' >> float_ >> ',' >> float_ >> ')';
 
@@ -224,7 +217,7 @@ namespace makerspec{
 
 
 
-    bool Parser::parse(std::ifstream &input, std::string &testfile, Configuration &config){
+    bool Parser::parse(std::ifstream &input, std::string &testfile, Configuration &config, Condition &condition){
         input.unsetf(std::ios::skipws);
 
         std::string storage;
@@ -275,9 +268,11 @@ namespace makerspec{
             toleranceOfCoord = unit == Configuration::mm ? toleranceOfMm : toleranceOfInch;
             config = Configuration(unit, toleranceOfDegree, toleranceOfCoord);
             testfile = filename;
+            if(parsed.describes.size() > 0 && parsed.describes.at(0).specs.size() > 0){
+                condition = parsed.describes.at(0).specs.at(0).condition;
+            }
             return true;
         } else{
-            std::cout << "fail: " << parsed.describes.size() << std::endl;
             return false;
         }
     }

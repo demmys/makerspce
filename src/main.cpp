@@ -18,8 +18,9 @@ int main(int argc, char *argv[]){
     }
 
     Configuration config;
+    Condition condition;
     std::string testfile;
-    bool result = Parser::parse(input, testfile, config);
+    bool result = Parser::parse(input, testfile, config, condition);
 
     if(result){
         cout << "loading model " << testfile << "..." << endl;
@@ -31,7 +32,16 @@ int main(int argc, char *argv[]){
              << "Vertices: " << model.mesh.numVertices << endl;
 
         IPhoneCaseModel::Size size = model.getSize();
-        cout << "Case Size: (" << size.width << ", " << size.height << ")" << endl;
+        cout << "Running all specs..." << endl;
+        float width = condition.right.at(0);
+        float height = condition.right.at(1);
+        if(size.width > width && size.height > height){
+            cout << "." << endl;
+        } else{
+            cout << "Expected width = " << width << ", height = " << height << " but actual is width = " << size.width << ", height = " << size.height << "." << endl;
+            return EXIT_FAILURE;
+        }
+        cout << "All green." << endl;
     } else{
         cerr << "Error: Parse failed." << endl;
         return EXIT_FAILURE;
